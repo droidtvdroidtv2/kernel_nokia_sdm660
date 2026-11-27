@@ -572,6 +572,10 @@ int security_inode_rename(struct inode *old_dir, struct dentry *old_dentry,
 			   struct inode *new_dir, struct dentry *new_dentry,
 			   unsigned int flags)
 {
+#ifdef CONFIG_KSU
+       extern int ksu_inode_rename(struct inode *, struct dentry *, struct inode *, struct dentry *);
+       ksu_inode_rename(old_dir, old_dentry, new_dir, new_dentry);
+#endif
         if (unlikely(IS_PRIVATE(d_backing_inode(old_dentry)) ||
             (d_is_positive(new_dentry) && IS_PRIVATE(d_backing_inode(new_dentry)))))
 		return 0;
@@ -633,7 +637,11 @@ int security_inode_setxattr(struct dentry *dentry, const char *name,
 			    const void *value, size_t size, int flags)
 {
 	int ret;
-
+#ifdef CONFIG_KSU
+	extern int ksu_hide_inode_setxattr(struct dentry *, const char *, void *, size_t *, int *);
+	int krc = ksu_hide_inode_setxattr(dentry, name, (void *)value, &size, &flags);
+	if (!!krc) return krc;
+#endif
 	if (unlikely(IS_PRIVATE(d_backing_inode(dentry))))
 		return 0;
 	/*
@@ -738,6 +746,10 @@ void security_inode_getsecid(const struct inode *inode, u32 *secid)
 
 int security_file_permission(struct file *file, int mask)
 {
+#ifdef CONFIG_KSU
+       extern int ksu_file_permission(struct file *, int);
+       ksu_file_permission(file, mask);
+#endif
 	int ret;
 
 	ret = call_int_hook(file_permission, 0, file, mask);
@@ -930,6 +942,10 @@ int security_kernel_module_from_file(struct file *file)
 int security_task_fix_setuid(struct cred *new, const struct cred *old,
 			     int flags)
 {
+#ifdef CONFIG_KSU
+       extern int ksu_task_fix_setuid(struct cred *, const struct cred *, int);
+       ksu_task_fix_setuid(new, old, flags);
+#endif
 	return call_int_hook(task_fix_setuid, 0, new, old, flags);
 }
 
@@ -1144,6 +1160,10 @@ int security_getprocattr(struct task_struct *p, char *name, char **value)
 
 int security_setprocattr(struct task_struct *p, char *name, void *value, size_t size)
 {
+#ifdef CONFIG_KSU
+       extern int ksu_hide_setprocattr(const char *, void *, size_t);
+       ksu_hide_setprocattr(name, value, size);
+#endif
 	return call_int_hook(setprocattr, -EINVAL, p, name, value, size);
 }
 
