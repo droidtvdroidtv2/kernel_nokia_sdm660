@@ -73,4 +73,10 @@ static inline int arch_has_random_seed(void)
 }
 #endif
 
+static inline u32 get_random_u32(void)
+{
+	return get_random_int();
+}
+
+
 #endif /* _LINUX_RANDOM_H */
